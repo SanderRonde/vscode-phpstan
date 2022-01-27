@@ -174,7 +174,7 @@ export class PHPStan {
         this._timeouts[updatedDocument.fileName] = setTimeout(async () => {
             delete this._timeouts[updatedDocument.fileName];
 
-            let result: tmp.SynchrounousResult = null;
+            let result: tmp.FileResult = null;
             let filePath: string = updatedDocument.fileName;
 
             if (updatedDocument.isDirty) {
@@ -226,13 +226,17 @@ export class PHPStan {
             ], options);
 
             let results: string = "";
-            this._current[updatedDocument.fileName].stdout.on("data", (data) => {
+
+            const onData = (data: string|Buffer) => {
                 if (data instanceof Buffer) {
                     data = data.toString("utf8");
                 }
 
                 results += data;
-            });
+            }
+
+            this._current[updatedDocument.fileName].stdout.on("data", onData);
+            this._current[updatedDocument.fileName].stderr.on("data", onData);
 
             this._current[updatedDocument.fileName].on("error", (err) => {
                 if (err.message.indexOf("ENOENT") !== -1) {
